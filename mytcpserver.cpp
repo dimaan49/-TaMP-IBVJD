@@ -1,7 +1,5 @@
 #include "mytcpserver.h"
 #include "serverfunctions.h"
-#include <QCoreApplication>
-#include <QString>
 
 MyTcpServer::~MyTcpServer()
 {
@@ -10,14 +8,14 @@ MyTcpServer::~MyTcpServer()
     server_status=0;
 }
 
-MyTcpServer::MyTcpServer(QObject *parent, int server_port) : QObject(parent){
+MyTcpServer::MyTcpServer(QObject *parent,  int server_port,  QHostAddress server_address) : QObject(parent){
     qDebug() << "The server is running on port " << server_port << "\n";
     mTcpServer = new QTcpServer(this);
 
     connect(mTcpServer, &QTcpServer::newConnection,
             this, &MyTcpServer::slotNewConnection);
 
-    if(!mTcpServer->listen(QHostAddress::Any, server_port)){
+    if(!mTcpServer->listen(server_address, server_port)){
         qDebug() << "server is not started";
     } else {
         server_status=1;
@@ -39,17 +37,21 @@ void MyTcpServer::slotNewConnection(){
 void MyTcpServer::slotServerRead(){
     QString res = "";
     QTcpSocket *actualSocket = sockArray[((QTcpSocket *)sender())->socketDescriptor()];
+    qDebug() << "New connection with " << ((QTcpSocket *)sender())->socketDescriptor() << "socket descriptor";
     while(actualSocket->bytesAvailable()>0)
     {
+        ////////////////П О М Е Н Я Т Ь
         QByteArray array = actualSocket->readAll();
         qDebug()<< array <<"\n";
         if(array=="\x01")
         {
+            QByteArray response = queryAnalyzer(res);
             actualSocket->write(res.toUtf8());
             res = "";
         }
         else
             res.append(array);
+        /////////////////Т у т или д а л ь ш е
     }
     actualSocket->write(res.toUtf8());
 
