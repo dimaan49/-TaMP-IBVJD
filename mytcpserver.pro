@@ -1,5 +1,5 @@
 QT -= gui
-
+QT += core
 QT += network #Для работы с сетью
 
 
@@ -19,7 +19,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     main.cpp \
-    mytcpserver.cpp
+    mytcpserver.cpp\
+    serverfunctions.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -27,4 +28,5 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
-    mytcpserver.h
+    mytcpserver.h\
+    serverfunctions.h

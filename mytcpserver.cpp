@@ -1,57 +1,63 @@
 #include "mytcpserver.h"
-#include <QDebug>
+#include "serverfunctions.h"
 #include <QCoreApplication>
-#include<QString>
+#include <QString>
 
 MyTcpServer::~MyTcpServer()
 {
 
     mTcpServer->close();
-    //server_status=0;
+    server_status=0;
 }
 
-MyTcpServer::MyTcpServer(QObject *parent) : QObject(parent){
+MyTcpServer::MyTcpServer(QObject *parent, int server_port) : QObject(parent){
+    qDebug() << "The server is running on port " << server_port << "\n";
     mTcpServer = new QTcpServer(this);
 
     connect(mTcpServer, &QTcpServer::newConnection,
             this, &MyTcpServer::slotNewConnection);
 
-    if(!mTcpServer->listen(QHostAddress::Any, 33333)){
+    if(!mTcpServer->listen(QHostAddress::Any, server_port)){
         qDebug() << "server is not started";
     } else {
-        //server_status=1;
+        server_status=1;
         qDebug() << "server is started";
     }
 }
 
 void MyTcpServer::slotNewConnection(){
- //   if(server_status==1){
-        mTcpSocket = mTcpServer->nextPendingConnection();
-        mTcpSocket->write("Hello, World!!! I am echo server!\r\n");
-        connect(mTcpSocket, &QTcpSocket::readyRead,this,&MyTcpServer::slotServerRead);
-        connect(mTcpSocket,&QTcpSocket::disconnected,this,&MyTcpServer::slotClientDisconnected);
-   // }
+    if(server_status==1){
+        QTcpSocket *actualSocket;
+        actualSocket = mTcpServer->nextPendingConnection();
+        actualSocket->write("Hello, World!!! I am echo server!\r\n");
+        connect(actualSocket, &QTcpSocket::readyRead,this,&MyTcpServer::slotServerRead);
+        connect(actualSocket,&QTcpSocket::disconnected,this,&MyTcpServer::slotClientDisconnected);
+        sockArray.insert(actualSocket->socketDescriptor(), actualSocket);
+    }
 }
 
 void MyTcpServer::slotServerRead(){
     QString res = "";
-    while(mTcpSocket->bytesAvailable()>0)
+    QTcpSocket *actualSocket = sockArray[((QTcpSocket *)sender())->socketDescriptor()];
+    while(actualSocket->bytesAvailable()>0)
     {
-        QByteArray array =mTcpSocket->readAll();
-        qDebug()<<array<<"\n";
+        QByteArray array = actualSocket->readAll();
+        qDebug()<< array <<"\n";
         if(array=="\x01")
         {
-            mTcpSocket->write(res.toUtf8());
+            actualSocket->write(res.toUtf8());
             res = "";
         }
         else
             res.append(array);
     }
-    mTcpSocket->write(res.toUtf8());
+    actualSocket->write(res.toUtf8());
 
 }
 
 void MyTcpServer::slotClientDisconnected(){
-    mTcpSocket->close();
+    QTcpSocket *actualSocket = (QTcpSocket*)sender();
+    actualSocket->close();
+    sockArray.remove(actualSocket->socketDescriptor());
 }
 
