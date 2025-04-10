@@ -38,23 +38,15 @@ void MyTcpServer::slotServerRead(){
     QString res = "";
     QTcpSocket *actualSocket = sockArray[((QTcpSocket *)sender())->socketDescriptor()];
     qDebug() << "New connection with " << ((QTcpSocket *)sender())->socketDescriptor() << "socket descriptor";
-    while(actualSocket->bytesAvailable()>0)
-    {
-        ////////////////П О М Е Н Я Т Ь
-        QByteArray array = actualSocket->readAll();
-        qDebug()<< array <<"\n";
-        if(array=="\x01")
-        {
-            QByteArray response = queryAnalyzer(res);
-            actualSocket->write(res.toUtf8());
-            res = "";
-        }
-        else
-            res.append(array);
-        /////////////////Т у т или д а л ь ш е
-    }
-    actualSocket->write(res.toUtf8());
 
+        QByteArray array = actualSocket->readAll();
+        if (!array.isEmpty()) {
+            qDebug() << array << "\n";
+            res.append(array);
+            QByteArray query = queryAnalyzer(res);
+            res+=query;
+            actualSocket->write(res.toUtf8());
+        }
 }
 
 void MyTcpServer::slotClientDisconnected(){
