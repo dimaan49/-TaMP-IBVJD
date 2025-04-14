@@ -9,15 +9,47 @@ QString MUSMESSAGE = "<music> - Command to hide message in the music file\r\nCom
 QString NEWMESSAGE = "<newton> - Command to find all root of the equation\r\nCommon syntax: <equation>\r\n\r\n";
 QString HELPMESSAGE = AUTHMESSAGE + REGMESSAGE + STATMESSAGE + VIGMESSAGE  + SHAMESSAGE + MUSMESSAGE + NEWMESSAGE;
 
-QByteArray authentication(QString a, QString b) {
-    qDebug() << "it`s authentication funcition\n";
-    DataBase::get_instance();
-    return QByteArray();
+QByteArray authentication(QString name, QString password) {
+    QSqlDatabase db = DataBase::get_instance().get_db();
+    QSqlQuery query(db);
+    query.prepare("SELECT name, password FROM users WHERE name = :name and password = :password;");
+    query.bindValue(":name", name);
+    query.bindValue(":password", password);
+    query.exec();
+    if (!query.next()) {
+        return  QByteArray("User isn`t found\n\r;");
+    }
+    else {
+        return QByteArray("Authentication is access!\r\n");
+    }
 }
-QByteArray registration(QString a, QString b, QString c) {
-    qDebug() << "it`s registration funcition\n";
-    return QByteArray();
+
+QByteArray registration(QString name, QString password, QString email) {
+    QSqlDatabase db = DataBase::get_instance().get_db();
+    QSqlQuery query(db);
+    query.prepare("SELECT name FROM users WHERE name = :name;");
+    query.bindValue(":name", name);
+    query.exec();
+    if (query.isActive()) {
+    if (query.next()) {
+        return QByteArray("This is user is already exist");
+    }
+    else {
+        query.prepare("INSERT INTO users (name, password, email) VALUES (:name, :password, :email);");
+        query.bindValue(":name", name);
+        query.bindValue(":password", password);
+        query.bindValue(":email", email);
+        query.exec();
+        query.clear();
+        QString mes = "you are " + name + " !\r\n";
+        QByteArray message = mes.toUtf8();
+        return QByteArray(message);
+    }
+    }
+
 }
+
+
 QByteArray lookallstat(QString a, QString b) {
     qDebug() << "it`s funcition for viewing all stat\n";
     return QByteArray();
@@ -52,7 +84,6 @@ QByteArray queryAnalyzer(QString message) {
         int parts_quantity = parts.size();
 
         if (parts.at(0) == "help") {
-            //qDebug().noquote() << HELPMESSAGE;
             return QByteArray(HELPMESSAGE.toUtf8());
         }
         else if (parts.at(0) == "auth" && parts.length() > 2)

@@ -36,9 +36,9 @@ protected:
     DataBase &operator = (const DataBase &) = delete;
     friend class DataBaseDestroyer;
 public:
+    QSqlDatabase &get_db();
     bool createTable();
     static DataBase& get_instance();
-   // QStringList queryToDB(QStringList src);
 };
 
 

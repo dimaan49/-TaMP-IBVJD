@@ -27,7 +27,6 @@ void MyTcpServer::slotNewConnection(){
     if(server_status==1){
         QTcpSocket *actualSocket;
         actualSocket = mTcpServer->nextPendingConnection();
-        actualSocket->write("Hello, World!!! I am echo server!\r\n");
         connect(actualSocket, &QTcpSocket::readyRead,this,&MyTcpServer::slotServerRead);
         connect(actualSocket,&QTcpSocket::disconnected,this,&MyTcpServer::slotClientDisconnected);
         sockArray.insert(actualSocket->socketDescriptor(), actualSocket);

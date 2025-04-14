@@ -21,7 +21,8 @@ SOURCES += \
     main.cpp \
     mytcpserver.cpp\
     serverfunctions.cpp\
-    database.cpp
+    database.cpp\
+    relations.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

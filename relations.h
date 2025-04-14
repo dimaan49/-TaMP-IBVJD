@@ -2,18 +2,14 @@
 #define RELATION
 #include <QString>
 
-struct user {
+struct User {
+    User ();
+    User (int, QString, QString, QString);
     int id;
+    QString name;
     QString password;
-    QString login;
     QString email;
 };
 
-struct admin{
-    int id;
-    QString password;
-    QString login;
-    QString email;
-};
 
 #endif

@@ -6,7 +6,7 @@ DataBaseDestroyer DataBase::destroyer;
 DataBase::DataBase()
 {
     db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName("models.db");
+    db.setDatabaseName("C:/Users/Admin/git/Tamp/models.db");
     if (!db.open()) {
         qDebug() << "openDatabaseError\r\n";
     }
@@ -15,11 +15,14 @@ DataBase::DataBase()
         qDebug() << "DataBase is started\n;";
     }
 }
+QSqlDatabase &DataBase::get_db() {
+    return this->db;
+}
 
 bool DataBase::createTable()
 {
     QSqlQuery query(db);
-    return query.exec("create table users(id integer primary key not null, login text not null unique, password text not null, email text not null unique UNION CREATE table admins (id integer primary key not null, login text not null unique, password text not null, email text not null unique));");
+    return query.exec("CREATE TABLE users(id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL UNIQUE, password TEXT NOT NULL, email TEXT NOT NULL UNIQUE);");
 }
 
 DataBase::~DataBase()
