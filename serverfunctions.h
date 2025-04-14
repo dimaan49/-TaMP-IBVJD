@@ -5,6 +5,7 @@
 #include <QString>
 #include <QStringList>
 #include <QByteArray>
+#include <database.h>
 
 QByteArray queryAnalyzer(QString);
 QByteArray authentication(QString, QString);

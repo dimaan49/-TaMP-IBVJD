@@ -11,6 +11,7 @@ QString HELPMESSAGE = AUTHMESSAGE + REGMESSAGE + STATMESSAGE + VIGMESSAGE  + SHA
 
 QByteArray authentication(QString a, QString b) {
     qDebug() << "it`s authentication funcition\n";
+    DataBase::get_instance();
     return QByteArray();
 }
 QByteArray registration(QString a, QString b, QString c) {
