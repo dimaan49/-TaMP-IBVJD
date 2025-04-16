@@ -39,6 +39,7 @@ public:
     QSqlDatabase &get_db();
     bool createTable();
     static DataBase& get_instance();
+    User getUserById(int id);
 };
 
 

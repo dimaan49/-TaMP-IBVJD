@@ -5,7 +5,7 @@ MyTcpServer::~MyTcpServer()
 {
 
     mTcpServer->close();
-    server_status=0;
+
 }
 
 MyTcpServer::MyTcpServer(QObject *parent,  int server_port,  QHostAddress server_address) : QObject(parent){
@@ -18,19 +18,16 @@ MyTcpServer::MyTcpServer(QObject *parent,  int server_port,  QHostAddress server
     if(!mTcpServer->listen(server_address, server_port)){
         qDebug() << "server is not started";
     } else {
-        server_status=1;
         qDebug() << "server is started";
     }
 }
 
 void MyTcpServer::slotNewConnection(){
-    if(server_status==1){
         QTcpSocket *actualSocket;
         actualSocket = mTcpServer->nextPendingConnection();
         connect(actualSocket, &QTcpSocket::readyRead,this,&MyTcpServer::slotServerRead);
         connect(actualSocket,&QTcpSocket::disconnected,this,&MyTcpServer::slotClientDisconnected);
         sockArray.insert(actualSocket->socketDescriptor(), actualSocket);
-    }
 }
 
 void MyTcpServer::slotServerRead(){

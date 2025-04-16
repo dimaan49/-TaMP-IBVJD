@@ -43,6 +43,10 @@ DataBase &DataBase::get_instance()
     return *instance;
 }
 
+User getUserById(int id) {
+    qDebug() << "Try to write";
+}
+
 DataBaseDestroyer::~DataBaseDestroyer()
 {
     delete instance;

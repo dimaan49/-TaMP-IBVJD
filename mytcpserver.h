@@ -22,6 +22,5 @@ public slots:
 private:
     QTcpServer * mTcpServer;
     QMap<int, QTcpSocket*> sockArray;
-    int server_status=0;
 };
 #endif

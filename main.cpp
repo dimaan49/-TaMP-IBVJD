@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
     QStringList pos_args = parser.positionalArguments();
     QHostAddress host_ip;
     if (pos_args.isEmpty()) {
-        host_ip = QHostAddress("127.0.0.1");
+        host_ip = QHostAddress("0.0.0.0");
     } else {
         host_ip = QHostAddress(pos_args.at(0));
     }
