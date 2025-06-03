@@ -51,13 +51,86 @@ QByteArray registration(QString name, QString password, QString email) {
 }
 
 
-QByteArray lookallstat(QString a, QString b) {
-    qDebug() << "it`s funcition for viewing all stat\n";
-    return QByteArray();
+QByteArray lookallstat(QString adminName, QString adminPassword) {
+    QSqlDatabase db = DataBase::get_instance().get_db();
+    QSqlQuery query(db);
+    
+    // Проверяем права администратора
+    query.prepare("SELECT id FROM users WHERE name = :name AND password = :password");
+    query.bindValue(":name", adminName);
+    query.bindValue(":password", adminPassword);
+    
+    if (!query.exec() || !query.next()) {
+        return QByteArray("Ошибка аутентификации администратора\n");
+    }
+    
+    int adminId = query.value(0).toInt();
+    UserRole role = DataBase::get_instance().getUserRole(adminId);
+    
+    if (role != UserRole::ADMIN) {
+        return QByteArray("Недостаточно прав для просмотра статистики\n");
+    }
+    
+    // Получаем статистику всех пользователей
+    QList<UserStats> stats = DataBase::get_instance().getAllUsersStats();
+    QString result = "Статистика пользователей:\n\n";
+    
+    for (const UserStats& stat : stats) {
+        result += QString("ID: %1\n").arg(stat.userId);
+        result += QString("Имя: %1\n").arg(stat.userName);
+        result += QString("Роль: %1\n").arg(static_cast<int>(stat.role));
+        result += QString("Количество входов: %1\n").arg(stat.loginCount);
+        if (stat.lastLogin.isValid()) {
+            result += QString("Последний вход: %1\n").arg(stat.lastLogin.toString("dd.MM.yyyy hh:mm:ss"));
+        }
+        result += "\n";
+    }
+    
+    return result.toUtf8();
 }
-QByteArray vigenereCipher(QString a) {
-    qDebug() << "it`s Vegener`s cipher function\n";
-    return QByteArray();
+
+QByteArray updateUserData(QString adminName, QString adminPassword, QString targetUser, 
+                         QString newName, QString newPassword, QString newEmail) {
+    QSqlDatabase db = DataBase::get_instance().get_db();
+    QSqlQuery query(db);
+    
+    // Проверяем права администратора
+    query.prepare("SELECT id FROM users WHERE name = :name AND password = :password");
+    query.bindValue(":name", adminName);
+    query.bindValue(":password", adminPassword);
+    
+    if (!query.exec() || !query.next()) {
+        return QByteArray("Ошибка аутентификации администратора\n");
+    }
+    
+    int adminId = query.value(0).toInt();
+    UserRole role = DataBase::get_instance().getUserRole(adminId);
+    
+    if (role != UserRole::ADMIN) {
+        return QByteArray("Недостаточно прав для обновления данных пользователей\n");
+    }
+    
+    // Находим ID целевого пользователя
+    query.prepare("SELECT id FROM users WHERE name = :name");
+    query.bindValue(":name", targetUser);
+    
+    if (!query.exec() || !query.next()) {
+        return QByteArray("Пользователь не найден\n");
+    }
+    
+    int userId = query.value(0).toInt();
+    
+    // Обновляем данные пользователя
+    if (DataBase::get_instance().updateUser(userId, newName, newPassword, newEmail)) {
+        return QByteArray("Данные пользователя успешно обновлены\n");
+    } else {
+        return QByteArray("Ошибка при обновлении данных пользователя\n");
+    }
+}
+
+QByteArray vigenereCipher(QString text, QString key) {
+    QString encrypted = Encrypt(text, key);
+    return QByteArray(encrypted.toUtf8());
 }
 
 QByteArray messageToSha1(QString message) {
@@ -158,16 +231,95 @@ QString extractMessageFromMusic(QString musicFilePath) {
     return QString::fromUtf8(messageData);
 }
 
-QString Encrypt(QString a, QString b , QString c) {
-    qDebug() << "it`s ecnrypt funcition\n";
-    return QByteArray();
+QString Encrypt(QString text, QString key) {
+    QString res;
+    int tlen = text.length(), klen = key.length();
+    for (int i = 0; i < tlen; ++i) {
+        QChar tc = text[i], kc = key[i % klen];
+        int t = tc.unicode() - (tc.isUpper() ? 'A' : 'a');
+        int k = kc.unicode() - (kc.isUpper() ? 'A' : 'a');
+        int c = (t + k) % 26;
+        res += QChar(c + (tc.isUpper() ? 'A' : 'a'));
+    }
+    return res;
 }
-QString Decrypt(QString a, QString b, QString c) {
-    qDebug() << "it`s decrypt funcition\n";
-    return QByteArray();
+QString Decrypt(QString text, QString key) {
+    QString res;
+    int tlen = text.length(), klen = key.length();
+    for (int i = 0; i < tlen; ++i) {
+        QChar tc = text[i], kc = key[i % klen];
+        int t = tc.unicode() - (tc.isUpper() ? 'A' : 'a');
+        int k = kc.unicode() - (kc.isUpper() ? 'A' : 'a');
+        int c = (t - k + 26) % 26;
+        res += QChar(c + (tc.isUpper() ? 'A' : 'a'));
+    }
+    return res;
 }
-double rootByNewton() {
-    return 1;
+
+Equation parseEquation(const QString& equation_str) {
+    Equation eq = {0, 0, 0}; // По умолчанию все коэффициенты 0
+    
+    // Убираем пробелы и "= 0" из строки
+    QString str = equation_str.simplified();
+    str.remove(" ");
+    str.remove("=0");
+    
+    // Добавляем '+' перед отрицательными числами для упрощения парсинга
+    str.replace("-", "+-");
+    if (str.startsWith("+")) {
+        str.remove(0, 1);
+    }
+    
+    // Разбиваем на члены
+    QStringList terms = str.split("+", Qt::SkipEmptyParts);
+    
+    for (const QString& term : terms) {
+        if (term.contains("x^2")) {
+            QString coef = term.left(term.indexOf("x^2"));
+            eq.a = coef.isEmpty() ? 1 : (coef == "-" ? -1 : coef.toDouble());
+        }
+        else if (term.contains("x")) {
+            QString coef = term.left(term.indexOf("x"));
+            eq.b = coef.isEmpty() ? 1 : (coef == "-" ? -1 : coef.toDouble());
+        }
+        else {
+            eq.c = term.toDouble();
+        }
+    }
+    
+    return eq;
+}
+
+double findRoot(const Equation& eq, double x0, double epsilon, int max_iter) {
+    double x = x0;
+    
+    for (int i = 0; i < max_iter; ++i) {
+        double f = eq.evaluate(x);
+        double df = eq.derivative(x);
+        
+        // Если производная близка к нулю, метод может не сойтись
+        if (std::abs(df) < epsilon) {
+            return std::numeric_limits<double>::quiet_NaN();
+        }
+        
+        double x_new = x - f / df;
+        
+        // Если достигнута требуемая точность
+        if (std::abs(x_new - x) < epsilon) {
+            return x_new;
+        }
+        
+        x = x_new;
+    }
+    
+    // Если за максимальное число итераций корень не найден
+    return std::numeric_limits<double>::quiet_NaN();
+}
+
+// Обновляем функцию rootByNewton
+double rootByNewton(const QString& equation_str) {
+    Equation eq = parseEquation(equation_str);
+    return findRoot(eq);
 }
 
 QByteArray queryAnalyzer(QString message) {
