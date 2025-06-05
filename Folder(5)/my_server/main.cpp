@@ -39,6 +39,7 @@ int main(int argc, char *argv[])
     if (!server.startServer(host, port)) {
         return 1;
     }
+    server.printUsersTable();
 
     return a.exec();
 }
