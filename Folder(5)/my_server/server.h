@@ -15,6 +15,7 @@ public:
     explicit Server(QObject *parent = nullptr);
     bool startServer(const QHostAddress &address = QHostAddress::Any, quint16 port = 0);
     void stopServer();
+    void printUsersTable();
 
 protected:
     void incomingConnection(qintptr socketDescriptor) override;
