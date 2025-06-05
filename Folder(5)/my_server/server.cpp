@@ -33,6 +33,60 @@ void Server::stopServer()
     qInfo() << "The server has stopped";
 }
 
+void Server::printUsersTable()
+{
+    QSqlQuery query(m_db);
+    if (!query.exec("SELECT id, login, password, email, created_at FROM users ORDER BY created_at")) {
+        qCritical() << "Ошибка при запросе пользователей:" << query.lastError().text();
+        return;
+    }
+
+    QVector<QStringList> rows;
+    QStringList headers = {"ID", "Login", "Password (hashed)", "Email", "Created At"};
+    rows.append(headers);
+
+    while (query.next()) {
+        QStringList row;
+        row << query.value(0).toString();
+        row << query.value(1).toString();
+        row << query.value(2).toString();
+        row << query.value(3).toString();
+        row << (query.value(4).isNull() ? "NULL" : query.value(4).toDateTime().toString("yyyy-MM-dd HH:mm:ss"));
+        rows.append(row);
+    }
+
+    QVector<int> widths;
+    for (int i = 0; i < headers.size(); ++i) {
+        int max_len = 0;
+        for (const auto& row : rows) {
+            max_len = qMax(max_len, row[i].length());
+        }
+        widths << max_len + 2; // +2 для отступов
+    }
+
+    QString header_line = "|";
+    for (int i = 0; i < headers.size(); ++i) {
+        header_line += " " + headers[i].leftJustified(widths[i]-1) + "|";
+    }
+    qDebug().noquote() << header_line;
+
+    QString separator = "+";
+    for (int w : widths) {
+        separator += QString("-").repeated(w) + "+";
+    }
+    qDebug().noquote() << separator;
+
+    for (int i = 1; i < rows.size(); ++i) {
+        QString data_line = "|";
+        for (int j = 0; j < rows[i].size(); ++j) {
+            data_line += " " + rows[i][j].leftJustified(widths[j]-1) + "|";
+        }
+        qDebug().noquote() << data_line;
+    }
+
+    qDebug() << "Total users:" << rows.size()-1;
+}
+
 void Server::incomingConnection(qintptr socketDescriptor)
 {
     QTcpSocket *socket = new QTcpSocket(this);
