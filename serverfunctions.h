@@ -8,10 +8,29 @@
 #include <database.h>
 #include <QCryptographicHash>
 
+/**
+ * @brief Анализирует входящий запрос и вызывает соответствующую функцию
+ * @param message Входящее сообщение от клиента
+ * @return Ответ сервера в виде QByteArray
+ */
+QByteArray queryAnalyzer(QString message);
 
-QByteArray queryAnalyzer(QString);
-QByteArray authentication(QString, QString);
-QByteArray registration(QString, QString, QString);
+/**
+ * @brief Аутентификация пользователя
+ * @param name Имя пользователя
+ * @param password Пароль пользователя
+ * @return Результат аутентификации в виде QByteArray
+ */
+QByteArray authentication(QString name, QString password);
+
+/**
+ * @brief Регистрация нового пользователя
+ * @param name Имя пользователя
+ * @param password Пароль пользователя
+ * @param email Электронная почта пользователя
+ * @return Результат регистрации в виде QByteArray
+ */
+QByteArray registration(QString name, QString password, QString email);
 
 /**
  * @brief Просмотр статистики всех пользователей (только для админа)
@@ -29,8 +48,18 @@ QByteArray lookallstat(QString adminName, QString adminPassword);
  */
 QByteArray vigenereCipher(QString text, QString key);
 
-QByteArray messageToSha1(QString);
+/**
+ * @brief Вычисление SHA1-хеша сообщения
+ * @param message Исходное сообщение
+ * @return SHA1-хеш в виде QByteArray
+ */
+QByteArray messageToSha1(QString message);
 
+/**
+ * @brief Встраивание сообщения в музыкальный файл
+ * @param 
+ * @return Результат операции в виде QByteArray
+ */
 QByteArray messageInMusic(QString, QString);
 
 /**
