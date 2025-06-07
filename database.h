@@ -9,9 +9,29 @@
 #include <QVariant>
 #include <QDebug>
 #include <QtSql>
-#include <relations.h>
+#include "relations.h"
 
 class DataBase;
+
+/**
+ * @brief Перечисление ролей пользователей
+ */
+enum class UserRole {
+    GUEST = 0,    ///< Гость (неавторизованный пользователь)
+    USER = 1,     ///< Обычный пользователь
+    ADMIN = 2     ///< Администратор
+};
+
+/**
+ * @brief Структура для статистики пользователя
+ */
+struct UserStats {
+    int userId;           ///< ID пользователя
+    QString userName;     ///< Имя пользователя
+    UserRole role;        ///< Роль пользователя
+    int loginCount;       ///< Количество входов в систему
+    QDateTime lastLogin;  ///< Время последнего входа
+};
 
 /**
  * @brief Класс-разрушитель для синглтона базы данных
@@ -51,12 +71,12 @@ private:
     static DataBaseDestroyer destroyer;  ///< Объект-разрушитель
 protected:
     QSqlDatabase db;                     ///< Объект базы данных
-
+    
     /**
      * @brief Защищённый конструктор (паттерн Singleton)
      */
     DataBase();
-
+    
     /**
      * @brief Защищённый деструктор
      */
@@ -71,8 +91,20 @@ protected:
      * @brief Запрет присваивания
      */
     DataBase &operator = (const DataBase &) = delete;
-
+    
     friend class DataBaseDestroyer;
+
+    /**
+     * @brief Создать все необходимые таблицы в базе данных
+     * @return true в случае успеха
+     */
+    bool createTables();
+
+    /**
+     * @brief Создать таблицу ролей и статистики
+     * @return true в случае успеха
+     */
+    bool createRolesAndStatsTable();
 
 public:
     /**
