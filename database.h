@@ -15,22 +15,30 @@ class DataBase;
 
 /**
  * @brief Перечисление ролей пользователей
+ * @param GUEST Гость (неавторизованный пользователь)
+ * @param USER Обычный пользователь
+ * @param ADMIN Администратор
  */
 enum class UserRole {
-    GUEST = 0,    ///< Гость (неавторизованный пользователь)
-    USER = 1,     ///< Обычный пользователь
-    ADMIN = 2     ///< Администратор
+    GUEST = 0, 
+    USER = 1, 
+    ADMIN = 2   
 };
 
 /**
  * @brief Структура для статистики пользователя
+  * @param userId param ID пользователя
+ * @param userName Имя пользователя
+ * @param role Роль пользователя
+   * @param loginCount Количество входов в систему
+ * @param lastLogin Время последнего входа
  */
 struct UserStats {
-    int userId;           ///< ID пользователя
-    QString userName;     ///< Имя пользователя
-    UserRole role;        ///< Роль пользователя
-    int loginCount;       ///< Количество входов в систему
-    QDateTime lastLogin;  ///< Время последнего входа
+    int userId;            
+    QString userName;    
+    UserRole role;       
+    int loginCount;     
+    QDateTime lastLogin; 
 };
 
 /**
@@ -59,7 +67,7 @@ public:
 
 /**
  * @brief Класс для работы с базой данных (реализация паттерна Singleton)
- * 
+ *
  * Этот класс обеспечивает единую точку доступа к базе данных SQLite
  * и реализует основные операции для работы с ней
  */
@@ -67,10 +75,10 @@ class DataBase: public QObject
 {
     Q_OBJECT
 private:
-    static DataBase *instance;           ///< Единственный экземпляр класса
-    static DataBaseDestroyer destroyer;  ///< Объект-разрушитель
+    static DataBase *instance;           
+    static DataBaseDestroyer destroyer; 
 protected:
-    QSqlDatabase db;                     ///< Объект базы данных
+    QSqlDatabase db;               
     
     /**
      * @brief Защищённый конструктор (паттерн Singleton)
