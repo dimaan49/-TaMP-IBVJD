@@ -5,8 +5,9 @@
 #include <QString>
 #include <QStringList>
 #include <QByteArray>
-#include <database.h>
-#include <QCryptographicHash>
+#include <QDateTime>
+#include "database.h"
+#include <cmath>
 
 /**
  * @brief Анализирует входящий запрос и вызывает соответствующую функцию
@@ -57,10 +58,9 @@ QByteArray messageToSha1(QString message);
 
 /**
  * @brief Встраивание сообщения в музыкальный файл
- * @param 
  * @return Результат операции в виде QByteArray
  */
-QByteArray messageInMusic(QString, QString);
+QByteArray messageInMusic();
 
 /**
  * @brief Шифрование текста
@@ -134,6 +134,5 @@ double findRoot(const Equation& eq, double x0 = 0, double epsilon = 1e-10, int m
  */
 QByteArray updateUserData(QString adminName, QString adminPassword, QString targetUser,
                          QString newName, QString newPassword, QString newEmail);
-
 
 #endif
