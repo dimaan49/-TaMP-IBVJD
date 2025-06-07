@@ -1,28 +1,57 @@
-#include <serverfunctions.h>
+#include "serverfunctions.h"
 
-
-QString AUTHMESSAGE = "<auth> - Command to authenticate user in the system\r\nCommon syntax: <auth> <login> <pasword>\r\n\r\n";
-QString REGMESSAGE = "<reg> - Command to create new user in the system\r\nCommon syntax: <reg> <login> <password> <email>\r\n\r\n";
-QString STATMESSAGE = "<lookall> - Command to view all stat in the system\r\nCommon syntax: <lookall> \r\n\r\n";
-QString VIGMESSAGE = "<vigener> - Command to transform message in cipher with Vigenere incryption\r\nCommon syntax: <vigener> <text_message>\r\n\r\n";
-QString SHAMESSAGE = "<hash> - Command to view sha1 hash of the message\r\nCommon syntax: <hash> <text_message>\r\n\r\n";
-QString MUSMESSAGE = "<music> - Command to hide message in the music file\r\nCommon syntax: <music> <text_message> <music_file>\r\n\r\n";
-QString NEWMESSAGE = "<newton> - Command to find all root of the equation\r\nCommon syntax: <equation>\r\n\r\n";
-QString HELPMESSAGE = AUTHMESSAGE + REGMESSAGE + STATMESSAGE + VIGMESSAGE  + SHAMESSAGE + MUSMESSAGE + NEWMESSAGE;
+QString AUTHMESSAGE = "<auth> - Команда для аутентификации пользователя в системе\r\nСинтаксис: <auth> <login> <password>\r\n\r\n";
+QString REGMESSAGE = "<reg> - Команда для создания нового пользователя в системе\r\nСинтаксис: <reg> <login> <password> <email>\r\n\r\n";
+QString STATMESSAGE = "<lookall> - Команда для просмотра статистики всех пользователей (только для админа)\r\nСинтаксис: <lookall> <admin_login> <admin_password>\r\n\r\n";
+QString UPDATEMESSAGE = "<updateuser> - Команда для обновления данных пользователя (только для админа)\r\nСинтаксис: <updateuser> <admin_login> <admin_password> <target_user> <new_name> <new_password> <new_email>\r\n\r\n";
+QString VIGMESSAGE = "<vigener> - Команда для шифрования сообщения методом Виженера\r\nСинтаксис: <vigener> <text_message> <key>\r\n\r\n";
+QString SHAMESSAGE = "<hash> - Команда для получения SHA1-хеша сообщения\r\nСинтаксис: <hash> <text_message>\r\n\r\n";
+QString MUSMESSAGE = "<music> - Команда для скрытия сообщения в музыкальном файле\r\nСинтаксис: <music> <text_message> <music_file>\r\n\r\n";
+QString NEWMESSAGE = "<newton> - Команда для поиска корней уравнения\r\nСинтаксис: <newton> <equation>\r\n\r\n";
+QString HELPMESSAGE = AUTHMESSAGE + REGMESSAGE + STATMESSAGE + UPDATEMESSAGE + VIGMESSAGE + SHAMESSAGE + MUSMESSAGE + NEWMESSAGE;
 
 QByteArray authentication(QString name, QString password) {
+    if (name.isEmpty() || password.isEmpty()) {
+        return QByteArray("Имя пользователя и пароль не могут быть пустыми\n");
+    }
+
     QSqlDatabase db = DataBase::get_instance().get_db();
     QSqlQuery query(db);
-    query.prepare("SELECT name, password FROM users WHERE name = :name and password = :password;");
+    
+    // Сначала находим пользователя
+    query.prepare("SELECT id, name, password FROM users WHERE name = :name;");
     query.bindValue(":name", name);
-    query.bindValue(":password", password);
-    query.exec();
+    
+    if (!query.exec()) {
+        return QByteArray("Ошибка базы данных при аутентификации\n");
+    }
+    
     if (!query.next()) {
-        return  QByteArray("User isn`t found\n\r;");
+        return QByteArray("Пользователь не найден\n");
     }
-    else {
-        return QByteArray("Authentication is access!\r\n");
+    
+    // Проверяем пароль
+    if (query.value("password").toString() != password) {
+        return QByteArray("Неверный пароль\n");
     }
+    
+    // Обновляем статистику входа
+    int userId = query.value("id").toInt();
+    DataBase::get_instance().updateLoginStats(userId);
+    
+    // Получаем роль пользователя
+    UserRole role = DataBase::get_instance().getUserRole(userId);
+    QString roleStr;
+    switch(role) {
+        case UserRole::ADMIN: roleStr = "администратор"; break;
+        case UserRole::USER: roleStr = "пользователь"; break;
+        default: roleStr = "гость";
+    }
+    
+    QString successMsg = QString("Аутентификация успешна! Вы вошли как %1 (роль: %2)\n")
+                        .arg(name)
+                        .arg(roleStr);
+    return successMsg.toUtf8();
 }
 
 QByteArray registration(QString name, QString password, QString email) {
@@ -132,7 +161,6 @@ QByteArray vigenereCipher(QString text, QString key) {
     QString encrypted = Encrypt(text, key);
     return QByteArray(encrypted.toUtf8());
 }
-
 QByteArray messageToSha1(QString message) {
     qDebug() << "it`s funcition for transform message in sha1 hash\n";
     QByteArray byteArray = message.toUtf8();
@@ -292,78 +320,152 @@ Equation parseEquation(const QString& equation_str) {
 
 double findRoot(const Equation& eq, double x0, double epsilon, int max_iter) {
     double x = x0;
-    
+
     for (int i = 0; i < max_iter; ++i) {
         double f = eq.evaluate(x);
         double df = eq.derivative(x);
-        
+
         // Если производная близка к нулю, метод может не сойтись
         if (std::abs(df) < epsilon) {
             return std::numeric_limits<double>::quiet_NaN();
         }
-        
+
         double x_new = x - f / df;
-        
+
         // Если достигнута требуемая точность
         if (std::abs(x_new - x) < epsilon) {
             return x_new;
         }
-        
+
         x = x_new;
     }
-    
+
     // Если за максимальное число итераций корень не найден
     return std::numeric_limits<double>::quiet_NaN();
 }
 
+
+
 // Обновляем функцию rootByNewton
 double rootByNewton(const QString& equation_str) {
     Equation eq = parseEquation(equation_str);
-    return findRoot(eq);
+
+    // Для квадратного уравнения находим оба корня
+    if (eq.a != 0) {
+        double discriminant = eq.b * eq.b - 4 * eq.a * eq.c;
+
+        if (discriminant < 0) {
+            return std::numeric_limits<double>::quiet_NaN(); // Нет действительных корней
+        }
+
+        // Первый корень (начинаем с x0 = 0)
+        double root1 = findRoot(eq, 0.0);
+
+        // Если есть два разных корня
+        if (discriminant > 0) {
+            // Второй корень (начинаем с x0, далекого от первого корня)
+            double root2 = findRoot(eq, root1 + 10);
+
+            // Возвращаем наименьший корень (можно изменить логику)
+            return std::min(root1, root2);
+        }
+
+        return root1; // Один корень (дискриминант = 0)
+    }
+    // Для линейного уравнения
+    else if (eq.b != 0) {
+        return -eq.c / eq.b;
+    }
+
+    // Нет решений
+    return std::numeric_limits<double>::quiet_NaN();
 }
 
 QByteArray queryAnalyzer(QString message) {
-        QStringList parts = message.split("&", Qt::SkipEmptyParts);
-        parts.last().remove("\r\n");
-        int parts_quantity = parts.size();
+    QStringList parts = message.split("&", Qt::SkipEmptyParts);
+    parts.last().remove("\r\n");
+    int parts_quantity = parts.size();
 
-        if (parts.at(0) == "help") {
-            return QByteArray(HELPMESSAGE.toUtf8());
+    if (parts.at(0) == "help") {
+        return QByteArray(HELPMESSAGE.toUtf8());
+    }
+    else if (parts.at(0) == "auth" && parts.length() > 2)
+    {
+        QByteArray authResult = authentication(parts.at(1), parts.at(2));
+        if (authResult.startsWith("Authentication is access")) {
+            // Обновляем статистику входа
+            QSqlQuery query;
+            query.prepare("SELECT id FROM users WHERE name = :name");
+            query.bindValue(":name", parts.at(1));
+            if (query.exec() && query.next()) {
+                DataBase::get_instance().updateLoginStats(query.value(0).toInt());
+            }
         }
-        else if (parts.at(0) == "auth" && parts.length() > 2)
-        {
-            return authentication(parts.at(1), parts.at(2));
+        return authResult;
+    }
+    else if (parts.at(0) == "reg" && parts.length() > 3)
+    {
+        return registration(parts.at(1), parts.at(2), parts.at(3));
+    }
+    else if (parts.at(0) == "lookall" && parts.length() > 2)
+    {
+        return lookallstat(parts.at(1), parts.at(2));
+    }
+    else if (parts.at(0) == "updateuser" && parts.length() > 5) {
+        return updateUserData(parts.at(1), parts.at(2), parts.at(3), 
+                            parts.at(4), parts.at(5), parts.value(6));
+    }
+    else if (parts.at(0) == "vigener" && parts.length() > 2)
+    {
+        return vigenereCipher(parts.at(1), parts.at(2));
+    }
+    else if (parts.at(0) == "hash" && parts.length() > 1)
+    {
+        return messageToSha1(parts.at(1));
+    }
+    else if (parts.at(0) == "music" && parts.length() > 0)
+    {
+        return messageInMusic(parts.at(1), parts.at(2));
+    }
+    //декодирование сообщения из музыкального файла
+    else if (parts.at(0) == "extract" && parts.length() > 1) {
+        return extractMessageFromMusic(parts.at(1)).toUtf8();
+    }
+    else if (parts.at(0) == "newton" && parts.length() > 1)
+    {
+        Equation eq = parseEquation(parts.at(1));
+
+        if (eq.a == 0) { // Линейное уравнение
+            if (eq.b == 0) {
+                return QByteArray("Уравнение не имеет решений\n");
+            }
+            double root = -eq.c / eq.b;
+            QString result = QString("Корень уравнения: %1\n").arg(root);
+            return result.toUtf8();
         }
-        else if (parts.at(0) == "reg" && parts.length() > 3)
-        {
-            return registration(parts.at(1), parts.at(2), parts.at(3));
+        else { // Квадратное уравнение
+            double discriminant = eq.b * eq.b - 4 * eq.a * eq.c;
+
+            if (discriminant < 0) {
+                return QByteArray("Действительных корней не найдено\n");
+            }
+
+            // Первый корень
+            double root1 = findRoot(eq, 0.0);
+
+            if (discriminant == 0) {
+                QString result = QString("Уравнение имеет один корень: %1\n").arg(root1);
+                return result.toUtf8();
+            }
+            else {
+                // Второй корень - используем теорему Виета
+                double root2 = -eq.b/eq.a - root1;
+
+                QString result = QString("Корни уравнения: %1 и %2\n").arg(root1).arg(root2);
+                return result.toUtf8();
+            }
         }
-        else if (parts.at(0) == "lookall" && parts.length() > 2)
-        {
-            return lookallstat(parts.at(1), parts.at(2));
-        }
-        else if (parts.at(0) == "vigener" && parts.length() > 1)
-        {
-            return vigenereCipher(parts.at(1));
-        }
-        else if (parts.at(0) == "hash" && parts.length() > 1)
-        {
-            return messageToSha1(parts.at(1));
-        }
-        else if (parts.at(0) == "music" && parts.length() > 2)
-        {
-            return messageInMusic(parts.at(1), parts.at(2));
-        }
-        //декодирование сообщения из музыкального файла
-        else if (parts.at(0) == "extract" && parts.length() > 1) {
-            return extractMessageFromMusic(parts.at(1)).toUtf8();
-        }
-        else if (parts.at(0) == "newton" && parts.length() > 0)
-        {
-            QByteArray ret;
-            ret.setNum(rootByNewton());
-            return ret;
-        } else {
-            return QByteArray();
-        }
+    } else {
+        return QByteArray();
+    }
 }
