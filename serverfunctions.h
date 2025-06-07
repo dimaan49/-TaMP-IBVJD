@@ -82,9 +82,9 @@ QString Decrypt(QString text, QString key);
  * @brief Структура для хранения уравнения
  */
 struct Equation {
-    double a;     ///< Коэффициент при x^2
-    double b;     ///< Коэффициент при x
-    double c;     ///< Свободный член
+    double a; 
+    double b; 
+    double c; 
     
     /**
      * @brief Вычисляет значение функции в точке x
