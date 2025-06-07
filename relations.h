@@ -1,4 +1,4 @@
-#ifndef RELTATION
+#ifndef RELATION
 #define RELATION
 #include <QString>
 
@@ -15,6 +15,7 @@ struct User {
      * Создает пользователя с пустыми полями и id = -1
      */
     User ();
+
     /**
      * @brief Конструктор с параметрами
      * @param id Идентификатор пользователя
@@ -22,7 +23,8 @@ struct User {
      * @param password Пароль пользователя
      * @param email Электронная почта пользователя
      */
-    User (int, QString, QString, QString);
+    User (int id, QString name, QString password, QString email);
+
     int id;         ///< Идентификатор пользователя
     QString name;    ///< Имя пользователя
     QString password; ///< Пароль пользователя
