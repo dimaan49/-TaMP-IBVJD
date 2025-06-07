@@ -11,7 +11,8 @@
 
 /**
  * @brief Класс TCP-сервера
- * 
+ * @param mTcpServer Указатель на объект TCP-сервера
+ * @param sockArray Карта активных сокетов
  * Реализует основную функциональность сервера:
  * - Прослушивание входящих подключений
  * - Обработка подключений клиентов
@@ -57,7 +58,7 @@ public slots:
      */
     void slotServerRead();
 private:
-    QTcpServer * mTcpServer;  ///< Указатель на объект TCP-сервера
-    QMap<int, QTcpSocket*> sockArray;  ///< Карта активных сокетов
+    QTcpServer * mTcpServer;
+    QMap<int, QTcpSocket*> sockArray;
 };
 #endif
