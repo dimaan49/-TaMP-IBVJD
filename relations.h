@@ -25,10 +25,10 @@ struct User {
      */
     User (int id, QString name, QString password, QString email);
 
-    int id;         ///< Идентификатор пользователя
-    QString name;    ///< Имя пользователя
-    QString password; ///< Пароль пользователя
-    QString email;    ///< Электронная почта пользователя
+    int id; 
+    QString name;  
+    QString password;
+    QString email;
 };
 
 
