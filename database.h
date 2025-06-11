@@ -20,8 +20,7 @@ class DataBase;
  * @param ADMIN Администратор
  */
 enum class UserRole {
-    GUEST = 0, 
-    USER = 1, 
+    USER = 0,  
     ADMIN = 2   
 };
 
