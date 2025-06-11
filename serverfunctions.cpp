@@ -10,6 +10,7 @@ QString MUSMESSAGE = "<music> - Команда для скрытия сообщ�
 QString NEWMESSAGE = "<newton> - Команда для поиска корней уравнения\r\nСинтаксис: <newton> <equation>\r\n\r\n";
 QString HELPMESSAGE = AUTHMESSAGE + REGMESSAGE + STATMESSAGE + UPDATEMESSAGE + VIGMESSAGE + SHAMESSAGE + MUSMESSAGE + NEWMESSAGE;
 
+// Аутентификация пользователя по имени и паролю
 QByteArray authentication(QString name, QString password) {
     if (name.isEmpty() || password.isEmpty()) {
         return QByteArray("Имя пользователя и пароль не могут быть пустыми\n");
@@ -54,6 +55,7 @@ QByteArray authentication(QString name, QString password) {
     return successMsg.toUtf8();
 }
 
+// Регистрация нового пользователя
 QByteArray registration(QString name, QString password, QString email) {
     QSqlDatabase db = DataBase::get_instance().get_db();
     QSqlQuery query(db);
@@ -79,7 +81,7 @@ QByteArray registration(QString name, QString password, QString email) {
 
 }
 
-
+// Получить полную статистику по всем пользователям системы (доступно только администратору)
 QByteArray lookallstat(QString adminName, QString adminPassword) {
     QSqlDatabase db = DataBase::get_instance().get_db();
     QSqlQuery query(db);
@@ -118,6 +120,7 @@ QByteArray lookallstat(QString adminName, QString adminPassword) {
     return result.toUtf8();
 }
 
+// Обновление данных пользователя (имени, пароля, email) (доступно только администратору)
 QByteArray updateUserData(QString adminName, QString adminPassword, QString targetUser, 
                          QString newName, QString newPassword, QString newEmail) {
     QSqlDatabase db = DataBase::get_instance().get_db();
@@ -157,10 +160,13 @@ QByteArray updateUserData(QString adminName, QString adminPassword, QString targ
     }
 }
 
+// Шифрование текста с помощью шифра Виженера
 QByteArray vigenereCipher(QString text, QString key) {
     QString encrypted = Encrypt(text, key);
     return QByteArray(encrypted.toUtf8());
 }
+
+// Преобразование сообщения в SHA1-хеш
 QByteArray messageToSha1(QString message) {
     qDebug() << "it`s funcition for transform message in sha1 hash\n";
     QByteArray byteArray = message.toUtf8();
@@ -174,6 +180,7 @@ QByteArray messageToSha1(QString message) {
     return result;
 }
 
+// Внедрение сообщения в музыкальный файл
 QByteArray messageInMusic(QString message, QString musicFilePath) {
     qDebug() << "it`s function for hide text message in the music file\n";
     qDebug() << "Hiding message in music file:" << musicFilePath;
@@ -224,7 +231,7 @@ QByteArray messageInMusic(QString message, QString musicFilePath) {
     return QByteArray("Message successfully hidden in audio file\r\n");
 }
 
-//декодирование сообщения из музыкального файла
+// Декодирование сообщения из музыкального файла
 QString extractMessageFromMusic(QString musicFilePath) {
     QFile audioFile(musicFilePath);
     if (!audioFile.open(QIODevice::ReadOnly)) {
@@ -259,6 +266,7 @@ QString extractMessageFromMusic(QString musicFilePath) {
     return QString::fromUtf8(messageData);
 }
 
+// Реализация шифра Виженера 
 QString Encrypt(QString text, QString key) {
     QString res;
     int tlen = text.length(), klen = key.length();
@@ -271,6 +279,8 @@ QString Encrypt(QString text, QString key) {
     }
     return res;
 }
+
+// Восстановление исходного текста
 QString Decrypt(QString text, QString key) {
     QString res;
     int tlen = text.length(), klen = key.length();
@@ -284,6 +294,7 @@ QString Decrypt(QString text, QString key) {
     return res;
 }
 
+// Разбор строки уравнения 
 Equation parseEquation(const QString& equation_str) {
     Equation eq = {0, 0, 0}; // По умолчанию все коэффициенты 0
     
@@ -315,9 +326,10 @@ Equation parseEquation(const QString& equation_str) {
         }
     }
     
-    return eq;
+    return eq; // Возвращаем структуру с коэффициентами
 }
 
+// Реализация метода Ньютона для поиска корня уравнения
 double findRoot(const Equation& eq, double x0, double epsilon, int max_iter) {
     double x = x0;
     
@@ -344,12 +356,13 @@ double findRoot(const Equation& eq, double x0, double epsilon, int max_iter) {
     return std::numeric_limits<double>::quiet_NaN();
 }
 
-// Обновляем функцию rootByNewton
+// Используем ранее реализованные функции
 double rootByNewton(const QString& equation_str) {
-    Equation eq = parseEquation(equation_str);
-    return findRoot(eq);
+    Equation eq = parseEquation(equation_str); // Парсим уравнение
+    return findRoot(eq); // Находим корень методом Ньютона
 }
 
+// Анализ входящих сообщений, возврат ответа в зависимости от команды
 QByteArray queryAnalyzer(QString message) {
     QStringList parts = message.split("&", Qt::SkipEmptyParts);
     parts.last().remove("\r\n");
@@ -396,7 +409,7 @@ QByteArray queryAnalyzer(QString message) {
     {
         return messageInMusic(parts.at(1), parts.at(2));
     }
-    //декодирование сообщения из музыкального файла
+    // Декодирование сообщения из музыкального файла
     else if (parts.at(0) == "extract" && parts.length() > 1) {
         return extractMessageFromMusic(parts.at(1)).toUtf8();
     }
