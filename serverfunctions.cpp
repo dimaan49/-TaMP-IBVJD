@@ -320,65 +320,34 @@ Equation parseEquation(const QString& equation_str) {
 
 double findRoot(const Equation& eq, double x0, double epsilon, int max_iter) {
     double x = x0;
-
+    
     for (int i = 0; i < max_iter; ++i) {
         double f = eq.evaluate(x);
         double df = eq.derivative(x);
-
+        
         // Если производная близка к нулю, метод может не сойтись
         if (std::abs(df) < epsilon) {
             return std::numeric_limits<double>::quiet_NaN();
         }
-
+        
         double x_new = x - f / df;
-
+        
         // Если достигнута требуемая точность
         if (std::abs(x_new - x) < epsilon) {
             return x_new;
         }
-
+        
         x = x_new;
     }
-
+    
     // Если за максимальное число итераций корень не найден
     return std::numeric_limits<double>::quiet_NaN();
 }
 
-
-
 // Обновляем функцию rootByNewton
 double rootByNewton(const QString& equation_str) {
     Equation eq = parseEquation(equation_str);
-
-    // Для квадратного уравнения находим оба корня
-    if (eq.a != 0) {
-        double discriminant = eq.b * eq.b - 4 * eq.a * eq.c;
-
-        if (discriminant < 0) {
-            return std::numeric_limits<double>::quiet_NaN(); // Нет действительных корней
-        }
-
-        // Первый корень (начинаем с x0 = 0)
-        double root1 = findRoot(eq, 0.0);
-
-        // Если есть два разных корня
-        if (discriminant > 0) {
-            // Второй корень (начинаем с x0, далекого от первого корня)
-            double root2 = findRoot(eq, root1 + 10);
-
-            // Возвращаем наименьший корень (можно изменить логику)
-            return std::min(root1, root2);
-        }
-
-        return root1; // Один корень (дискриминант = 0)
-    }
-    // Для линейного уравнения
-    else if (eq.b != 0) {
-        return -eq.c / eq.b;
-    }
-
-    // Нет решений
-    return std::numeric_limits<double>::quiet_NaN();
+    return findRoot(eq);
 }
 
 QByteArray queryAnalyzer(QString message) {
@@ -432,40 +401,14 @@ QByteArray queryAnalyzer(QString message) {
         return extractMessageFromMusic(parts.at(1)).toUtf8();
     }
     else if (parts.at(0) == "newton" && parts.length() > 1)
-    {
-        Equation eq = parseEquation(parts.at(1));
-
-        if (eq.a == 0) { // Линейное уравнение
-            if (eq.b == 0) {
-                return QByteArray("Уравнение не имеет решений\n");
-            }
-            double root = -eq.c / eq.b;
-            QString result = QString("Корень уравнения: %1\n").arg(root);
-            return result.toUtf8();
-        }
-        else { // Квадратное уравнение
-            double discriminant = eq.b * eq.b - 4 * eq.a * eq.c;
-
-            if (discriminant < 0) {
-                return QByteArray("Действительных корней не найдено\n");
-            }
-
-            // Первый корень
-            double root1 = findRoot(eq, 0.0);
-
-            if (discriminant == 0) {
-                QString result = QString("Уравнение имеет один корень: %1\n").arg(root1);
-                return result.toUtf8();
-            }
-            else {
-                // Второй корень - используем теорему Виета
-                double root2 = -eq.b/eq.a - root1;
-
-                QString result = QString("Корни уравнения: %1 и %2\n").arg(root1).arg(root2);
-                return result.toUtf8();
-            }
-        }
-    } else {
-        return QByteArray();
+{
+    double root = rootByNewton(parts.at(1));
+    if (std::isnan(root)) {
+        return QByteArray("Корень не найден или метод не сошелся");
     }
+    QString result = QString("Найденный корень: %1").arg(root);
+    return result.toUtf8();
+} else {
+    return QByteArray();
+}
 }
