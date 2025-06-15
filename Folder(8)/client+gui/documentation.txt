@@ -1,0 +1,14 @@
+cd C:\Users\prizr\Desktop\client+gui
+
+$env:PATH += ";C:\Qt\6.9.0\mingw_64\bin"
+
+qmake qt_task_app.pro
+
+mingw32-make
+
+C:\Users\prizr\Desktop\client+gui\bin\qt_task_app.exe
+
+
+
+
+Stop-Process -Name "qt_task_app" -Force
